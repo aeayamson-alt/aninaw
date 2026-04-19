@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aninaw Laserworks | Price List</title>
+    <style>
+        :root {
+            --aninaw-brown: #5D4037;
+            --aninaw-cream: #FDFBF7;
+            --aninaw-accent: #8D6E63;
+            --text-main: #3E2723;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif; 
+            background-color: var(--aninaw-cream); 
+            color: var(--text-main);
+            margin: 0; padding: 20px;
+        }
+
+        .container { max-width: 600px; margin: 0 auto; }
+
+        header { text-align: center; padding: 30px 0; }
+        header h1 { margin: 0; color: var(--aninaw-brown); text-transform: uppercase; letter-spacing: 2px; }
+        header p { margin: 5px 0; font-style: italic; color: var(--aninaw-accent); }
+
+        #loading { text-align: center; padding: 20px; color: var(--aninaw-accent); }
+
+        .category-section { margin-bottom: 25px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .category-title { background: var(--aninaw-brown); color: white; padding: 12px 20px; font-weight: bold; }
+
+        .product-card { 
+            background: white; border-bottom: 1px solid #f0f0f0; 
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .product-card:last-child { border-bottom: none; }
+
+        .product-info { flex: 1; }
+        .product-name { font-weight: bold; display: block; margin-bottom: 2px; }
+        .product-specs { font-size: 0.85rem; color: #777; display: block; }
+
+        .product-price { font-weight: bold; color: var(--aninaw-brown); font-size: 1.1rem; margin-left: 15px; }
+
+        .bulk-footer {
+            margin-top: 40px; text-align: center; padding: 20px;
+            border-top: 1px solid #ddd; font-size: 0.9rem; color: var(--aninaw-accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Aninaw Laserworks</h1>
+        <p>Artisan Crafts & Personalized Woodworks</p>
+    </header>
+
+    <div id="loading">Gathering your catalog...</div>
+    <div id="catalog-container"></div>
+
+    <footer class="bulk-footer">
+        <p>✨ <strong>Note:</strong> Discounts are available for bulk orders.<br>Let's discuss your project details during negotiation.</p>
+    </footer>
+</div>
+
+<script>
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT_uhj45yPvprCyOww1rlI0tYq9MjlRgv_cE_YKvcFYAV6ikKbnRbaaVNJ9BN_-koCWnECappGP8hRF/pub?gid=0&single=true&output=csv'; 
+
+    async function fetchCatalog() {
+        const container = document.getElementById('catalog-container');
+        const loading = document.getElementById('loading');
+        
+        if (!container || !loading) return;
+
+        try {
+            const response = await fetch(sheetUrl);
+            const data = await response.text();
+            const rows = data.split(/\r?\n/).map(row => row.split(','));
+
+            container.innerHTML = '';
+            const groups = {};
+            
+            for (let i = 1; i < rows.length; i++) {
+                const category = (rows[i][0] || "").replace(/"/g, '').trim();
+                const product = (rows[i][1] || "").replace(/"/g, '').trim();
+                const specs = (rows[i][2] || "").replace(/"/g, '').trim();
+                const price = (rows[i][3] || "").replace(/"/g, '').trim();
+
+                if (!product || product === "undefined" || product.includes("{")) continue;
+
+                if (!groups[category]) groups[category] = [];
+                groups[category].push({ product, specs, price });
+            }
+
+            for (const category in groups) {
+                let section = document.createElement('div');
+                section.className = 'category-section';
+                section.innerHTML = `<div class="category-title">${category || "Products"}</div>`;
+
+                groups[category].forEach(item => {
+                    section.innerHTML += `
+                        <div class="product-card">
+                            <div class="product-info">
+                                <span class="product-name">${item.product}</span>
+                                <span class="product-specs">${item.specs}</span>
+                            </div>
+                            <div class="product-price">₱${item.price}</div>
+                        </div>`;
+                });
+                container.appendChild(section);
+            }
+            loading.style.display = 'none';
+        } catch (error) {
+            loading.textContent = 'Error syncing with the database.';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', fetchCatalog);
+</script>
+
+</body>
+</html>
